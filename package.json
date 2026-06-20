@@ -1,6 +1,6 @@
 {
   "name": "rn-app-exit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Exit or background your React Native app — supports New Architecture (TurboModules) and Old Architecture with Kotlin/Swift native implementations.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
