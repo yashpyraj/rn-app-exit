@@ -78,7 +78,7 @@ AppExit.sendToBackground();
 Moves the app to the background without terminating. The process stays alive in memory — the user can resume from the app switcher exactly where they left off.
 
 - **Android**: calls `moveTaskToBack(true)` — native OS feature, fully reliable
-- **iOS**: suspends via `UIApplication suspend` selector — works across all current iOS versions
+- **iOS**: suspends via a **private** `UIApplication` selector — works on current iOS versions, but is not public API (see [iOS notes](#ios))
 
 ### Unified API
 
@@ -95,14 +95,21 @@ The `exit()` method is the recommended API for most use cases. Pass `{ backgroun
 ### Check capability at runtime
 
 ```tsx
+// Is the native module linked at all? False on web, in Expo Go, or when the
+// app was not rebuilt after install. Never throws.
+if (!AppExit.isAvailable) return;
+
 if (AppExit.isBackgroundSupported) {
-  // Android: always true
-  // iOS: false — backgrounding is OS-controlled
+  // Android — public OS API, reliable.
   AppExit.sendToBackground();
 } else {
-  AppExit.sendToBackground(); // still works on iOS via best-effort suspend
+  // iOS — sendToBackground() still works, but via private API. Decide
+  // explicitly whether you want that in a store build.
+  AppExit.sendToBackground();
 }
 ```
+
+`isBackgroundSupported` answers *"is this a sanctioned API here?"*, not *"will the call do something?"* — on iOS it is `false` and the call still works.
 
 ---
 
@@ -134,9 +141,13 @@ Moves the app to the background without terminating the process.
 | Android | `activity.moveTaskToBack(true)` |
 | iOS | `UIApplication` suspend selector |
 
+### `AppExit.isAvailable`
+
+`boolean` — whether the native module resolved. `false` on web, in Expo Go, or in a build where the native side was not rebuilt. Reading it never throws, so it is safe to branch on before any other call.
+
 ### `AppExit.isBackgroundSupported`
 
-`boolean` — `true` on Android, `false` on iOS.
+`boolean` — `true` on Android, `false` on iOS and wherever the module is unavailable.
 
 On Android, `moveTaskToBack` is a first-class OS feature. On iOS, backgrounding is managed by the OS and there is no public API — the package uses a best-effort approach that works on current iOS versions but is not a documented public API.
 
@@ -152,6 +163,8 @@ type AppExitOptions = {
 };
 ```
 
+The `Spec` interface for the native module is also exported from `rn-app-exit/src/NativeAppExit` if you need it.
+
 ---
 
 ## Platform notes
@@ -165,7 +178,7 @@ All three methods work as expected on Android API 21+. `sendToBackground()` beha
 Apple does not provide a public API for programmatic backgrounding or exit in App Store apps. This package provides:
 
 - `exitApp()` via `exit(0)` — works, but risks App Store rejection for consumer apps. Safe for enterprise/kiosk/dev builds.
-- `sendToBackground()` via `UIApplication` suspend — has been stable across iOS versions and does not trigger App Store rejection the way `exit()` can.
+- `sendToBackground()` via a **private** `UIApplication` selector. It has been stable across iOS releases, but it is not in the public headers, Apple does not guarantee it, and private-API use can itself be grounds for rejection. The call is guarded with `respondsToSelector:` and no-ops with a warning if the selector ever disappears. Treat this as a deliberate trade-off, not a safe default.
 
 For App Store consumer apps, the recommended pattern is:
 
@@ -178,9 +191,16 @@ AppExit.sendToBackground();
 
 ## New Architecture
 
-This package supports React Native's New Architecture (TurboModules) out of the box. The JavaScript spec in `src/NativeAppExit.ts` is used by React Native's codegen to generate native bindings automatically.
+This package works on both architectures with no extra configuration. The JavaScript spec in `src/NativeAppExit.ts` drives React Native's codegen.
 
-No additional configuration is needed. The package detects the active architecture at build time and uses the appropriate native implementation.
+The two platforms get there differently, and it is worth being precise:
+
+| Platform | Old Architecture | New Architecture |
+|---|---|---|
+| **Android** | `ReactContextBaseJavaModule` (`src/oldarch`) | codegen-generated TurboModule spec (`src/newarch`), selected by the `IS_NEW_ARCHITECTURE_ENABLED` build flag |
+| **iOS** | `RCTBridgeModule` | the same `RCTBridgeModule`, run through React Native's **interop layer** |
+
+So Android is a native TurboModule under the New Architecture; iOS is a bridge module that the New Architecture hosts via interop. Both work, and the JS API is identical — but iOS does not currently implement the codegen-generated ObjC++ spec directly. Contributions welcome.
 
 ---
 
