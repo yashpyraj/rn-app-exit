@@ -17,23 +17,33 @@ Most apps eventually need one of two things:
 - **Hard exit** — a logout button, a kiosk reset, a session wipe that kills the process
 - **Background** — a "minimize" button, a back-to-home UX without killing the process
 
-The original `react-native-exit-app` only does the first, is written in Java/Objective-C, has no TurboModule support, and hasn't been maintained since 2021. This package does both, properly.
+[`react-native-exit-app`](https://github.com/wumke/react-native-exit-app) is the established package for the first case, and it is a good one — since **v2.0.0 (June 2023)** it supports the New Architecture on both platforms. If a hard exit is all you need, use it.
+
+`rn-app-exit` exists for the second case. Its entire published API is `exitApp()` — there is no way to send an app to the background with it. That is the gap this package fills.
 
 ---
 
 ## Features
 
+Compared against `react-native-exit-app` **v2.0.0**, honestly — including where it is ahead:
+
 | | react-native-exit-app | **rn-app-exit** |
 |---|---|---|
 | Exit app | ✅ | ✅ |
-| Send to background | ❌ | ✅ |
-| Unified API | ❌ | ✅ |
-| Capability flags | ❌ | ✅ |
-| New Architecture (TurboModules) | ❌ | ✅ |
+| **Send to background** | ❌ | **✅** |
+| **Unified `exit({ background })`** | ❌ | **✅** |
+| **Capability flags** (`isAvailable`, `isBackgroundSupported`) | ❌ | **✅** |
+| **Safe import** — no crash when the native module is absent | ❌ | **✅** |
+| New Architecture (TurboModules) | ✅ | ✅ Android · ⚠️ iOS via interop |
+| iOS implements the codegen spec (`getTurboModule:`) | ✅ | ❌ *(see [New Architecture](#new-architecture))* |
 | Old Architecture | ✅ | ✅ |
-| Language | Java / ObjC | **Kotlin / ObjC++** |
-| Active maintenance | ❌ (2021) | ✅ |
+| Android language | Java | Kotlin |
+| Automated tests + CI | ❌ | ✅ |
 | Min React Native | 0.60 | 0.68 |
+
+**Pick `react-native-exit-app`** if you only need a hard exit and want the most widely used option — it is more battle-tested, and its iOS TurboModule implementation is more complete than this one's.
+
+**Pick `rn-app-exit`** if you need to background an app rather than kill it, want the capability flags, or want a package that does not throw at import time when the native side is missing.
 
 ---
 
