@@ -2,6 +2,7 @@
 
 > Exit or background your React Native app — with full **New Architecture (TurboModules)** support, written in **Kotlin** and **Objective-C++**.
 
+[![CI](https://github.com/yashpyraj/rn-app-exit/actions/workflows/ci.yml/badge.svg)](https://github.com/yashpyraj/rn-app-exit/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/rn-app-exit.svg)](https://www.npmjs.com/package/rn-app-exit)
 [![npm downloads](https://img.shields.io/npm/dm/rn-app-exit.svg)](https://www.npmjs.com/package/rn-app-exit)
 [![license](https://img.shields.io/npm/l/rn-app-exit.svg)](LICENSE)
