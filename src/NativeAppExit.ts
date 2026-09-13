@@ -13,7 +13,7 @@ export interface Spec extends TurboModule {
   /**
    * Moves the app to the background without terminating the process.
    * Android: moveTaskToBack(true) — fully supported.
-   * iOS: suspends the app via the UIApplication suspend selector — best effort.
+   * iOS: suspends the app via a private UIApplication selector — best effort.
    */
   sendToBackground(): void;
 
@@ -22,10 +22,15 @@ export interface Spec extends TurboModule {
    */
   getConstants(): {
     /**
-     * True on Android. iOS returns false because backgrounding is OS-controlled.
+     * True where backgrounding uses a public, OS-sanctioned API (Android).
+     * False on iOS, where it relies on a private selector — see the README.
      */
     isBackgroundSupported: boolean;
   };
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('AppExit');
+// `get` rather than `getEnforcing`: this module resolves at import time, and
+// throwing here would take down the whole bundle on any platform the native
+// module is absent from (web, unsupported platforms, a build where autolinking
+// did not run). Absence is reported at call time instead, with a fixable message.
+export default TurboModuleRegistry.get<Spec>('AppExit');
